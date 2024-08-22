@@ -50,10 +50,9 @@ def update_env_file():
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-@bot.message_handler(commands=['register'])
-def register_chatid(message):
+@bot.message_handler(commands=['subscribe'])
+def subscribe_message(message):
     chat_id = str(message.chat.id)
-
     if chat_id not in chat_ids:
         chat_ids.append(chat_id) # Add chat ID to the list
         CHAT_ID = ','.join(chat_ids) # Update CHAT_ID to be comma-separated
@@ -61,14 +60,34 @@ def register_chatid(message):
         # Update the .env file with the new chat IDs
         update_env_file()
 
-        print(f'New chat ID registered: {chat_id} -- {chat_ids}')
-        bot.reply_to(message, f'You has been registered and will start receiving the notifications.')
+        print(f'New chat ID subscribed: {chat_id}')
+        bot.send_message(chat_id, f'You have been subscribed to receive the groningen apartment notifications!')
     else:
-        bot.reply_to(message, f'You are already registered.')
+        bot.send_message(chat_id, f'You are already subscribed.')
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, 'I\'m hunting some apartments right now!')
+@bot.message_handler(commands=['unsubscribe'])
+def unsubscribe_message(message):
+    chat_id = str(message.chat.id)
+    if chat_id in chat_ids:
+        chat_ids.remove(chat_id) # Remove chat ID from the list
+        CHAT_ID = ','.join(chat_ids) # Update CHAT_ID to be comma-separated
+
+        # Update the .env file with the new chat IDs
+        update_env_file()
+
+        print(f'Chat ID unsubscribed: {chat_id}')
+        bot.send_message(chat_id, f'You have been unsubscribed from receiving groningen apartment notifications.')
+    else:
+        bot.send_message(chat_id, f'You are not subscribed.')
+
+# This handler captures any messages that are not handled by other commands
+@bot.message_handler(func=lambda message: True)
+def status_message(message):
+    chat_id = str(message.chat.id)
+    if chat_id in chat_ids:
+        bot.send_message(chat_id, 'I\'m hunting some apartments right now!')
+    else:
+        bot.send_message(chat_id, 'You are not subscribed to notifications, send the message /subscribe if you want them :)')
 
 def send_message(message):
     for chat_id in chat_ids:
