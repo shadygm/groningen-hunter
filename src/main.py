@@ -1,5 +1,6 @@
 import os
 import telebot
+from telebot import types
 import threading
 import time
 import textwrap
@@ -50,6 +51,28 @@ def update_env_file():
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# Create a custom keyboard
+def create_custom_keyboard():
+    # Create the markup object
+    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+
+    # Create buttons that show one text but trigger another action
+    subscribe_button = types.KeyboardButton('/subscribe')
+    unsubscribe_button = types.KeyboardButton('/unsubscribe')
+    status_button = types.KeyboardButton('/status')
+
+    # Add buttons to the markup
+    markup.add(subscribe_button, unsubscribe_button, status_button)
+
+    return markup
+
+def send_message(chat_id, message):
+    bot.send_message(chat_id, message, reply_markup=create_custom_keyboard())
+
+def broadcast_message(message):
+    for chat_id in chat_ids:
+        send_message(chat_id, message)
+
 @bot.message_handler(commands=['subscribe'])
 def subscribe_message(message):
     global chat_ids
@@ -63,9 +86,9 @@ def subscribe_message(message):
         update_env_file()
 
         print(f'New chat ID subscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        bot.send_message(chat_id, f'You have been subscribed to receive the groningen apartment notifications!')
+        send_message(chat_id, f'You have been subscribed to receive the groningen apartment notifications!')
     else:
-        bot.send_message(chat_id, f'You are already subscribed.')
+        send_message(chat_id, f'You are already subscribed.')
 
 @bot.message_handler(commands=['unsubscribe'])
 def unsubscribe_message(message):
@@ -80,22 +103,18 @@ def unsubscribe_message(message):
         update_env_file()
 
         print(f'Chat ID unsubscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        bot.send_message(chat_id, f'You have been unsubscribed from receiving groningen apartment notifications.')
+        send_message(chat_id, f'You have been unsubscribed from receiving groningen apartment notifications.')
     else:
-        bot.send_message(chat_id, f'You are not subscribed.')
+        send_message(chat_id, f'You are not subscribed.')
 
 # This handler captures any messages that are not handled by other commands
 @bot.message_handler(func=lambda message: True)
 def status_message(message):
     chat_id = str(message.chat.id)
     if chat_id in chat_ids:
-        bot.send_message(chat_id, 'I\'m hunting some apartments right now!')
+        send_message(chat_id, 'I\'m hunting some apartments right now!')
     else:
-        bot.send_message(chat_id, 'You are not subscribed to notifications, send the message /subscribe if you want them :)')
-
-def send_message(message):
-    for chat_id in chat_ids:
-        bot.send_message(chat_id, message)
+        send_message(chat_id, 'You are not subscribed to notifications, send the message /subscribe if you want them :)')
 
 runHunters = True
 def run_hunters():
@@ -115,7 +134,7 @@ def run_hunters():
                 message = f'Found error when running hunter "{hunter.name}": {str(e)}'
                 print(message)
                 # Optional: Send message on error
-                # send_message(message)
+                # broadcast_message(message)
 
         # Filter already seen preys
         filtered_preys = history.filter(preys)
@@ -138,7 +157,7 @@ def run_hunters():
                 Price: {prey.price}
                 Link: {prey.link}
             ''')
-            send_message(message)
+            broadcast_message(message)
         time.sleep(5*60)
     print('Stop hunters')
     for hunter in hunters:
