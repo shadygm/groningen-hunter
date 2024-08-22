@@ -31,7 +31,7 @@ class Pararius(Hunter):
 
                 # Add new prey
                 preys.append(Prey(name, price, link, agency, self.name))
-            except NoSuchElementException:
-                 # Ignore the item is incomplete or not new
+            except:
+                 # Ignore if the item is incomplete or not new
                 continue
         return preys

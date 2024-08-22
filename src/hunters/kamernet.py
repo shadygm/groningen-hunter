@@ -7,7 +7,7 @@ import re
 class Kamernet(Hunter):
     def __init__(self):
         name = 'Kamernet'
-        url = 'https://kamernet.nl/en/for-rent/rooms-groningen?radius=5&minSize=1&maxRent=17&listingTypes=4&listingTypes=2'
+        url = 'https://kamernet.nl/en/for-rent/rooms-groningen'
         super().__init__(name, url)
 
     def process(self):
@@ -26,6 +26,6 @@ class Kamernet(Hunter):
                 link = listing.get_attribute('href')
                 agency = 'No Agency'
                 preys.append(Prey(name, price, link, agency, self.name))
-            except (NoSuchElementException, TimeoutException):
+            except:
                 continue
         return preys

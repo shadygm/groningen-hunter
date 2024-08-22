@@ -129,7 +129,9 @@ def run_hunters():
         # Get preys
         for hunter in hunters:
             try:
-                preys += hunter.hunt()
+                hunter_preys = hunter.hunt()
+                print(f'Hunter {hunter.name} found {len(hunter_preys)} preys')
+                preys += hunter_preys
             except Exception as e:
                 message = f'Found error when running hunter "{hunter.name}": {str(e)}'
                 print(message)
