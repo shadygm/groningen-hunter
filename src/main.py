@@ -11,6 +11,7 @@ from history import History
 from dotenv import load_dotenv
 
 load_dotenv()
+ENV_FILE_PATH = 'src/.env'  # Path to the .env file
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 CHAT_ID = os.environ.get('CHAT_ID')
 MAXIMUM_PRICE = os.environ.get('MAXIMUM_PRICE')
@@ -19,8 +20,8 @@ MINIMUM_PRICE = os.environ.get('MINIMUM_PRICE')
 if BOT_TOKEN is None:
     print('BOT_TOKEN was not set! Make sure your .bashrc is well configured')
 
-if CHAT_ID is not None:
-    chat_ids = CHAT_ID.split(',')
+if CHAT_ID and CHAT_ID.strip():
+    chat_ids = [chat_id.strip() for chat_id in CHAT_ID.split(',') if chat_id.strip()]
 else:
     chat_ids = []
 print(f'Messages will be sent to: {chat_ids}')
@@ -35,11 +36,35 @@ if MINIMUM_PRICE is None:
 else:
     print(f'MINIMUM_PRICE is set to {MINIMUM_PRICE}')
 
+# Update the .env file
+def update_env_file():
+    with open(ENV_FILE_PATH, 'w') as f:
+        if BOT_TOKEN is not None:
+            f.write(f'BOT_TOKEN="{BOT_TOKEN}"\n')
+        if CHAT_ID is not None:
+            f.write(f'CHAT_ID="{CHAT_ID}"\n')
+        if MAXIMUM_PRICE is not None:
+            f.write(f'MAXIMUM_PRICE={MAXIMUM_PRICE}\n')
+        if MINIMUM_PRICE is not None:
+            f.write(f'MINIMUM_PRICE={MINIMUM_PRICE}\n')
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
-@bot.message_handler(commands=['chatid'])
-def send_chatid(message):
-    bot.reply_to(message, f'Your Chat ID is {message.chat.id}')
+@bot.message_handler(commands=['register'])
+def register_chatid(message):
+    chat_id = str(message.chat.id)
+
+    if chat_id not in chat_ids:
+        chat_ids.append(chat_id) # Add chat ID to the list
+        CHAT_ID = ','.join(chat_ids) # Update CHAT_ID to be comma-separated
+
+        # Update the .env file with the new chat IDs
+        update_env_file()
+
+        print(f'New chat ID registered: {chat_id} -- {chat_ids}')
+        bot.reply_to(message, f'You has been registered and will start receiving the notifications.')
+    else:
+        bot.reply_to(message, f'You are already registered.')
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
