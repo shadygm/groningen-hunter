@@ -3,16 +3,15 @@ VERSION="1.0.0"
 ENV_FILE="src/.env"
 
 display_help() {
-    echo "Usage: $0 {--run|--version|--build|--set-max <value>|--set-min <value>|--set-chat-id <value>|--set-bot-token <value>|--show-config|--help}"
+    echo "Usage: $0 {--run|--version|--build|--set-bot-token <value>|--set-max <value>|--set-min <value>|--show-config|--help}"
     echo
     echo "Options:"
     echo "  --run                   Build the Docker image and run the container"
     echo "  --version               Print the Docker image version and package versions"
     echo "  --build                 Build the Docker image"
+    echo "  --set-bot-token <value> Set the bot token in the configuration"
     echo "  --set-max <value>       Set the maximum price in the configuration"
     echo "  --set-min <value>       Set the minimum price in the configuration"
-    echo "  --set-chat-id <value>   Set the chat ID in the configuration"
-    echo "  --set-bot-token <value> Set the bot token in the configuration"
     echo "  --show-config           Show the current configuration"
     echo "  --help                  Display this help message"
 }
@@ -24,7 +23,10 @@ build_image() {
 
 # Run the Docker container
 run_container() {
-    docker run -it --rm --name groningen-hunter-container groningen-hunter
+    docker run -it --rm --name groningen-hunter-container \
+        -v $(pwd)/src/.env:/app/src/.env \
+        -v $(pwd)/history.txt:/app/history.txt \
+        groningen-hunter
 }
 
 # Print the groningen hunter version and versions inside docker image
@@ -70,17 +72,14 @@ case "$1" in
     --build)
         build_image
         ;;
+    --set-bot-token)
+        set_config "BOT_TOKEN" "$2"
+        ;;
     --set-max)
         set_config "MAXIMUM_PRICE" "$2"
         ;;
     --set-min)
         set_config "MINIMUM_PRICE" "$2"
-        ;;
-    --set-chat-id)
-        set_config "CHAT_ID" "$2"
-        ;;
-    --set-bot-token)
-        set_config "BOT_TOKEN" "$2"
         ;;
     --show-config)
         show_config

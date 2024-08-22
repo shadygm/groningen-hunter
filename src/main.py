@@ -52,6 +52,8 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['subscribe'])
 def subscribe_message(message):
+    global chat_ids
+    global CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id not in chat_ids:
         chat_ids.append(chat_id) # Add chat ID to the list
@@ -60,13 +62,15 @@ def subscribe_message(message):
         # Update the .env file with the new chat IDs
         update_env_file()
 
-        print(f'New chat ID subscribed: {chat_id}')
+        print(f'New chat ID subscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
         bot.send_message(chat_id, f'You have been subscribed to receive the groningen apartment notifications!')
     else:
         bot.send_message(chat_id, f'You are already subscribed.')
 
 @bot.message_handler(commands=['unsubscribe'])
 def unsubscribe_message(message):
+    global chat_ids
+    global CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id in chat_ids:
         chat_ids.remove(chat_id) # Remove chat ID from the list
@@ -75,7 +79,7 @@ def unsubscribe_message(message):
         # Update the .env file with the new chat IDs
         update_env_file()
 
-        print(f'Chat ID unsubscribed: {chat_id}')
+        print(f'Chat ID unsubscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
         bot.send_message(chat_id, f'You have been unsubscribed from receiving groningen apartment notifications.')
     else:
         bot.send_message(chat_id, f'You are not subscribed.')

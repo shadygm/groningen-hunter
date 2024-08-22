@@ -60,16 +60,10 @@ Before running the bot, we need to set the Telegram HTTP API token (the one you 
 ./hunter.sh --run
 ```
 
-The bot is now running, but we need to get the Chat ID to be able to receive the apartment notifications in our Telegram chat. Send the following message to your bot on Telegram.
+The bot is now running, but we need to subscribe to be able to receive the apartment notifications in our Telegram chat. Send the following message to your bot on Telegram.
 
 ```
-/chatid
-```
-
-The bot should answer you with the Chat ID, set the hunter Chat ID.
-
-```
-./hunter.sh --set-chat-id "YOUR-CHAT-ID"
+/subscribe
 ```
 
 It is also possible to configure the maximum and minimum prices to filter the apartments with the `--set-min` and `--set-max` commands. For example:
