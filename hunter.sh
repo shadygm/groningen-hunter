@@ -23,7 +23,10 @@ build_image() {
 
 # Run the Docker container
 run_container() {
+    xhost +
     docker run -it --rm --name groningen-hunter-container \
+        -e DISPLAY=$DISPLAY \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
         -v $(pwd)/src/.env:/app/src/.env \
         -v $(pwd)/history.txt:/app/history.txt \
         groningen-hunter
