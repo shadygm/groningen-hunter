@@ -23,6 +23,12 @@ build_image() {
 
 # Run the Docker container
 run_container() {
+    if ! test -f $(pwd)/history.txt; then
+        touch $(pwd)/history.txt
+    fi
+    if ! test -f $(pwd)/src/.env; then
+        touch $(pwd)/src/.env
+    fi
     xhost +
     docker run -it --rm --name groningen-hunter-container \
         -e DISPLAY=$DISPLAY \
