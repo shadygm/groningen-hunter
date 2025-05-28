@@ -20,3 +20,26 @@ class History:
         self.seen_apartments.extend(str(prey) for prey in new_preys)
         self.save_history()
         return new_preys
+
+    def get_all(self):
+        """Retrieve all listings from the history file."""
+        listings = []
+        for line in self.seen_apartments:
+            try:
+                name, link, agency, price = line.split('|')
+                listings.append({
+                    'name': name.strip(),
+                    'link': link.strip(),
+                    'agency': agency.strip(),
+                    'price': price.strip()
+                })
+            except ValueError:
+                continue  # Skip malformed lines
+        return listings
+
+    def save_listing(self, name, link, agency, price):
+        """Save a new listing to the history file."""
+        entry = f"{name} | {link} | {agency} | {price}"
+        if entry not in self.seen_apartments:
+            self.seen_apartments.append(entry)
+            self.save_history()

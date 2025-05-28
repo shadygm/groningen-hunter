@@ -24,7 +24,8 @@ class Pararius(Hunter):
                 # Get info
                 name = item.find_element(By.CLASS_NAME, 'listing-search-item__title').text
                 price_text = item.find_element(By.CLASS_NAME, 'listing-search-item__price').text
-                price = re.search(r'\d+(?:\.\d+)?', price_text).group().replace(".", "")# Filter only price number
+                # Remove everything except digits to build the price number
+                price = re.sub(r'\D', '', price_text)
                 link = item.find_element(By.CLASS_NAME, 'listing-search-item__link--title').get_attribute('href')
                 info_element = item.find_element(By.CLASS_NAME, 'listing-search-item__info')
                 agency = info_element.find_element(By.CLASS_NAME, 'listing-search-item__link').text
@@ -35,3 +36,16 @@ class Pararius(Hunter):
                  # Ignore if the item is incomplete or not new
                 continue
         return preys
+
+    def supported_cities(self):
+        return {
+            'Groningen': 'https://www.pararius.com/apartments/groningen',
+            'The Hague': 'https://www.pararius.com/apartments/den-haag'
+        }
+
+    def set_city(self, city):
+        cities = self.supported_cities()
+        if city in cities:
+            self.url = cities[city]
+        else:
+            raise ValueError(f"City '{city}' is not supported by {self.name}")

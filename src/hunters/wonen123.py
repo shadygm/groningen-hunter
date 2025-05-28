@@ -27,3 +27,16 @@ class Wonen123(Hunter):
             agency = self.name
             preys.append(Prey(name, price, link, agency, self.name))
         return preys
+
+    def supported_cities(self):
+        return {
+            'Groningen': 'https://www.expatrentalsholland.com/offer/in/groningen',
+            'The Hague': 'https://www.expatrentalsholland.com/offer/in/den+haag'
+        }
+
+    def set_city(self, city):
+        cities = self.supported_cities()
+        if city in cities:
+            self.url = cities[city]
+        else:
+            raise ValueError(f"City '{city}' is not supported by {self.name}")

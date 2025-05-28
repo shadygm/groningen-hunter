@@ -37,3 +37,15 @@ class Gruno(Hunter):
                  # Ignore incomplete items
                 continue
         return preys
+
+    def supported_cities(self):
+        return {
+            'Groningen': 'https://www.grunoverhuur.nl/woningaanbod/huur/groningen'
+        }
+
+    def set_city(self, city):
+        cities = self.supported_cities()
+        if city in cities:
+            self.url = cities[city]
+        else:
+            raise ValueError(f"City '{city}' is not supported by {self.name}")

@@ -11,20 +11,23 @@ from hunters.wonen123 import Wonen123
 from history import History
 from dotenv import load_dotenv
 
+# --- Constants and Globals ---
+ENV_FILE_PATH = 'src/.env'
+selected_city = None
+runHunters = True
+
+# --- Load environment variables ---
 load_dotenv()
-ENV_FILE_PATH = 'src/.env'  # Path to the .env file
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 CHAT_ID = os.environ.get('CHAT_ID')
 MAXIMUM_PRICE = os.environ.get('MAXIMUM_PRICE')
 MINIMUM_PRICE = os.environ.get('MINIMUM_PRICE')
 
+# --- Validate environment variables ---
 if BOT_TOKEN is None:
     print('BOT_TOKEN was not set! Make sure your .bashrc is well configured')
 
-if CHAT_ID and CHAT_ID.strip():
-    chat_ids = [chat_id.strip() for chat_id in CHAT_ID.split(',') if chat_id.strip()]
-else:
-    chat_ids = []
+chat_ids = [chat_id.strip() for chat_id in CHAT_ID.split(',') if chat_id.strip()] if CHAT_ID and CHAT_ID.strip() else []
 print(f'Messages will be sent to: {chat_ids}')
 
 if MAXIMUM_PRICE is None:
@@ -37,7 +40,7 @@ if MINIMUM_PRICE is None:
 else:
     print(f'MINIMUM_PRICE is set to {MINIMUM_PRICE}')
 
-# Update the .env file
+# --- Utility functions ---
 def update_env_file():
     with open(ENV_FILE_PATH, 'w') as f:
         if BOT_TOKEN is not None:
@@ -49,21 +52,13 @@ def update_env_file():
         if MINIMUM_PRICE is not None:
             f.write(f'MINIMUM_PRICE={MINIMUM_PRICE}\n')
 
+# --- Telegram bot setup ---
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Create a custom keyboard
 def create_custom_keyboard():
-    # Create the markup object
     markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-
-    # Create buttons that show one text but trigger another action
-    subscribe_button = types.KeyboardButton('/subscribe')
-    unsubscribe_button = types.KeyboardButton('/unsubscribe')
-    status_button = types.KeyboardButton('/status')
-
-    # Add buttons to the markup
-    markup.add(subscribe_button, unsubscribe_button, status_button)
-
+    help_button = types.KeyboardButton('/help')
+    markup.add(help_button)
     return markup
 
 def send_message(chat_id, message):
@@ -73,100 +68,205 @@ def broadcast_message(message):
     for chat_id in chat_ids:
         send_message(chat_id, message)
 
+# --- Command Handlers ---
 @bot.message_handler(commands=['subscribe'])
 def subscribe_message(message):
-    global chat_ids
-    global CHAT_ID
+    global chat_ids, CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id not in chat_ids:
-        chat_ids.append(chat_id) # Add chat ID to the list
-        CHAT_ID = ','.join(chat_ids) # Update CHAT_ID to be comma-separated
-
-        # Update the .env file with the new chat IDs
+        chat_ids.append(chat_id)
+        CHAT_ID = ','.join(chat_ids)
         update_env_file()
-
         print(f'New chat ID subscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        send_message(chat_id, f'You have been subscribed to receive the groningen apartment notifications!')
+        send_message(chat_id, 'You have been subscribed to receive the Groningen apartment notifications!')
     else:
-        send_message(chat_id, f'You are already subscribed.')
+        send_message(chat_id, 'You are already subscribed.')
 
 @bot.message_handler(commands=['unsubscribe'])
 def unsubscribe_message(message):
-    global chat_ids
-    global CHAT_ID
+    global chat_ids, CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id in chat_ids:
-        chat_ids.remove(chat_id) # Remove chat ID from the list
-        CHAT_ID = ','.join(chat_ids) # Update CHAT_ID to be comma-separated
-
-        # Update the .env file with the new chat IDs
+        chat_ids.remove(chat_id)
+        CHAT_ID = ','.join(chat_ids)
         update_env_file()
-
         print(f'Chat ID unsubscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        send_message(chat_id, f'You have been unsubscribed from receiving groningen apartment notifications.')
+        send_message(chat_id, 'You have been unsubscribed from receiving Groningen apartment notifications.')
     else:
-        send_message(chat_id, f'You are not subscribed.')
+        send_message(chat_id, 'You are not subscribed.')
 
-# This handler captures any messages that are not handled by other commands
-@bot.message_handler(func=lambda message: True)
+@bot.message_handler(commands=['status'])
 def status_message(message):
-    chat_id = str(message.chat.id)
-    if chat_id in chat_ids:
-        send_message(chat_id, 'I\'m hunting some apartments right now!')
+    if selected_city:
+        bot.send_message(message.chat.id, f"The currently selected city is: {selected_city}.")
+        if MAXIMUM_PRICE is not None:
+            bot.send_message(message.chat.id, f"Current maximum price filter is: {MAXIMUM_PRICE}.")
+        if MINIMUM_PRICE is not None:
+            bot.send_message(message.chat.id, f"Current minimum price filter is: {MINIMUM_PRICE}.")
     else:
-        send_message(chat_id, 'You are not subscribed to notifications, send the message /subscribe if you want them :)')
+        bot.send_message(message.chat.id, "No city has been selected yet. Please use the /start command to select a city.")
 
-runHunters = True
+@bot.message_handler(commands=['help'])
+def help_message(message):
+    help_text = textwrap.dedent('''
+        🌟 *Available Commands* 🌟
+
+        📩 *Subscription:*
+        /subscribe - Subscribe to apartment notifications.
+        /unsubscribe - Unsubscribe from apartment notifications.
+
+        🔍 *Status:*
+        /status - Check the currently selected city and price filters.
+        /list - Display all apartment listings found so far.
+
+        💰 *Price Filters:*
+        /set\_min\_price <amount> - Set the minimum price filter.
+        /set\_max\_price <amount> - Set the maximum price filter.
+
+        ❓ *Help:*
+        /help - Display this help message.
+
+        ⚠️ *Note:*
+        Once a city is selected, you must restart the bot to change the city.
+    ''')
+    bot.send_message(message.chat.id, help_text, parse_mode='Markdown')
+
+@bot.message_handler(commands=['set_min_price'])
+def set_min_price(message):
+    global MINIMUM_PRICE
+    try:
+        price = int(message.text.split()[1])
+        MINIMUM_PRICE = price
+        update_env_file()
+        bot.send_message(message.chat.id, f"Minimum price filter set to {MINIMUM_PRICE}.")
+    except (IndexError, ValueError):
+        bot.send_message(message.chat.id, "Invalid input. Use /set_min_price <amount>.")
+        if MINIMUM_PRICE is not None:
+            bot.send_message(message.chat.id, f"Current minimum price filter is {MINIMUM_PRICE}.")
+
+
+@bot.message_handler(commands=['set_max_price'])
+def set_max_price(message):
+    global MAXIMUM_PRICE
+    try:
+        price = int(message.text.split()[1])
+        MAXIMUM_PRICE = price
+        update_env_file()
+        bot.send_message(message.chat.id, f"Maximum price filter set to {MAXIMUM_PRICE}.")
+    except (IndexError, ValueError):
+        bot.send_message(message.chat.id, "Invalid input. Use /set_max_price <amount>.")
+        if not MAXIMUM_PRICE is None:
+            bot.send_message(message.chat.id, f"Current maximum price filter is {MAXIMUM_PRICE}.")
+
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    global selected_city
+    bot.send_message(
+        message.chat.id,
+        "Please select a city by typing the corresponding number:\n1) Groningen\n2) The Hague",
+        parse_mode='Markdown'
+    )
+
+@bot.message_handler(func=lambda message: message.text in ['1', '2'])
+def city_selection_message(message):
+    global selected_city
+    city_map = {'1': 'Groningen', '2': 'The Hague'}
+    selected_city = city_map[message.text]
+    bot.send_message(message.chat.id, f"You have selected {selected_city}. Hunters will now target this city.")
+
+    # Update hunters with the selected city
+    for hunter in [Wonen123(), Gruno(), Kamernet(), Pararius()]:
+        try:
+            hunter.set_city(selected_city)
+        except ValueError as e:
+            bot.send_message(message.chat.id, str(e))
+
+@bot.message_handler(commands=['list'])
+def list_message(message):
+    history = History('history.txt')
+    all_preys = history.get_all()
+
+    if not all_preys:
+        bot.send_message(message.chat.id, "No listings have been found yet.")
+        return
+
+    for prey in all_preys:
+        response = textwrap.dedent(f'''
+            \U0001F4E2 *Listing Found:*
+
+            Name: {prey['name']}
+            Agency: {prey['agency']}
+            Price: €{prey['price']}
+            Link: {prey['link']}
+        ''')
+        bot.send_message(message.chat.id, response, parse_mode='Markdown')
+
+@bot.message_handler(func=lambda message: True)
+def unrecognized_message(message):
+    bot.send_message(message.chat.id, "Unrecognized command. Use /help to see available commands.")
+
+# --- Core Logic: Hunters ---
 def run_hunters():
-    hunters = [Wonen123(), Gruno(), Kamernet(), Pararius()]
+    global selected_city
+    all_hunters = [Wonen123(), Gruno(), Kamernet(), Pararius()]
+
+    while selected_city is None:
+        print('Waiting for city selection...')
+        time.sleep(5)
+
+    active_hunters = []
+    for hunter in all_hunters:
+        try:
+            hunter.set_city(selected_city)
+            active_hunters.append(hunter)
+        except ValueError:
+            print(f"Skipping {hunter.name} as it does not support the selected city.")
 
     print('Start hunters')
-    for hunter in hunters:
+    for hunter in active_hunters:
         hunter.start()
+
     history = History('history.txt')
     while runHunters:
         preys = []
-        # Get preys
-        for hunter in hunters:
+        for hunter in active_hunters:
             try:
                 hunter_preys = hunter.hunt()
                 print(f'Hunter {hunter.name} found {len(hunter_preys)} preys')
                 preys += hunter_preys
             except Exception as e:
-                message = f'Found error when running hunter "{hunter.name}": {str(e)}'
-                print(message)
-                # Optional: Send message on error
-                # broadcast_message(message)
+                print(f'Error with hunter {hunter.name}: {e}')
 
-        # Filter already seen preys
         filtered_preys = history.filter(preys)
         if len(filtered_preys) > 0:
             print(f'Found {len(filtered_preys)} new preys')
 
-        # Filter maximum price
         if MAXIMUM_PRICE is not None:
             filtered_preys = [prey for prey in filtered_preys if int(prey.price) <= int(MAXIMUM_PRICE)]
 
-        # Filter minimum price
         if MINIMUM_PRICE is not None:
             filtered_preys = [prey for prey in filtered_preys if int(prey.price) >= int(MINIMUM_PRICE)]
 
-        # Send telegram message
         for prey in filtered_preys:
             message = textwrap.dedent(f'''
+                \U0001F4E2 *Listing Found:*
+
                 Name: {prey.name}
                 {'Agency: ' + prey.agency if prey.agency is not None else ''}
-                Price: {prey.price}
+                Price: €{prey.price}
                 Link: {prey.link}
             ''')
             broadcast_message(message)
-        time.sleep(5*60)
+        time.sleep(10 * 60)
+
     print('Stop hunters')
-    for hunter in hunters:
+    for hunter in active_hunters:
         hunter.stop()
 
-t = threading.Thread(target=run_hunters)
-t.start()
-bot.infinity_polling()
-runHunters = False
-t.join()
+# --- Main Entrypoint ---
+if __name__ == "__main__":
+    t = threading.Thread(target=run_hunters)
+    t.start()
+    bot.infinity_polling(timeout=1200)  # Timeout after 20 minutes (1200 seconds)
+    runHunters = False
+    t.join()
