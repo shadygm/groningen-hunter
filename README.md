@@ -1,6 +1,6 @@
-# Groningen Apartment Hunter Bot
+# Netherlands Apartment Hunter Bot
 
-This Python bot helps you find your perfect apartment in Groningen. It continuously checks various apartment rental websites, looking for new listings that match your preferences. Whenever it finds a potential match, the bot sends a notification to your Telegram account. (Yes I did find the place I'm living today using this bot 😜)
+This Python bot helps you find your perfect apartment in the Netherlands. It continuously checks various apartment rental websites, looking for new listings that match your preferences. Whenever it finds a potential match, the bot sends a notification to your Telegram account. (Yes I did find the place I'm living today using this bot 😜)
 
 <p align="center">
   <img src="https://github.com/brenocq/groningen-hunter/assets/17342434/6a83c8bc-a704-4d02-be39-b0df89974cc3">
@@ -44,7 +44,7 @@ newgrp docker
 sudo chown root:docker /var/run/docker.sock
 ```
 
-Then, clone the repository and build the Groningen Hunter.
+Then, clone the repository and build the Netherlands Apartment Hunter.
 
 ```
 git clone https://github.com/brenocq/groningen-hunter.git
@@ -80,6 +80,19 @@ All set up! You can now leave the bot running and wait for the notifications :)
 ```
 
 If you implement new hunters or develop new features, please create a PR. If you find any bugs, please open a new issue. All help is welcome ;)
+
+### Telegram Bot Commands
+
+Once the bot is running, you can interact with it using the following commands:
+
+- `/start` - Start the bot and select a city to monitor for apartment listings.
+- `/subscribe` - Subscribe to receive apartment notifications.
+- `/unsubscribe` - Unsubscribe from apartment notifications.
+- `/status` - Check the currently selected city and price filters.
+- `/list` - Display all apartment listings found so far.
+- `/set_min_price <amount>` - Set the minimum price filter for apartment listings.
+- `/set_max_price <amount>` - Set the maximum price filter for apartment listings.
+- `/help` - Display a list of available commands and their descriptions.
 
 ## License
 

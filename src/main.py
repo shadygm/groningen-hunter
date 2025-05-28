@@ -78,7 +78,7 @@ def subscribe_message(message):
         CHAT_ID = ','.join(chat_ids)
         update_env_file()
         print(f'New chat ID subscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        send_message(chat_id, 'You have been subscribed to receive the Groningen apartment notifications!')
+        send_message(chat_id, 'You have been subscribed to receive the Netherlands housing notifications!')
     else:
         send_message(chat_id, 'You are already subscribed.')
 
@@ -91,7 +91,7 @@ def unsubscribe_message(message):
         CHAT_ID = ','.join(chat_ids)
         update_env_file()
         print(f'Chat ID unsubscribed: {chat_id}. Current chat_ids "{CHAT_ID}"')
-        send_message(chat_id, 'You have been unsubscribed from receiving Groningen apartment notifications.')
+        send_message(chat_id, 'You have been unsubscribed from receiving Netherlands housing notifications.')
     else:
         send_message(chat_id, 'You are not subscribed.')
 
@@ -161,17 +161,35 @@ def set_max_price(message):
 @bot.message_handler(commands=['start'])
 def start_message(message):
     global selected_city
+
+    # Dynamically fetch supported cities from all hunters
+    all_hunters = [Wonen123(), Gruno(), Kamernet(), Pararius()]
+    city_set = set()
+    for hunter in all_hunters:
+        try:
+            city_set.update(hunter.supported_cities())
+        except NotImplementedError:
+            continue
+
+    # Create a numbered list of cities
+    city_list = sorted(city_set)
+    city_map = {str(i + 1): city for i, city in enumerate(city_list)}
+
+    # Save the city map globally for selection
+    global city_map_global
+    city_map_global = city_map
+
+    city_options = "\n".join([f"{i}) {city}" for i, city in city_map.items()])
     bot.send_message(
         message.chat.id,
-        "Please select a city by typing the corresponding number:\n1) Groningen\n2) The Hague",
+        f"Please select a city by typing the corresponding number:\n{city_options}",
         parse_mode='Markdown'
     )
 
-@bot.message_handler(func=lambda message: message.text in ['1', '2'])
+@bot.message_handler(func=lambda message: message.text in city_map_global)
 def city_selection_message(message):
     global selected_city
-    city_map = {'1': 'Groningen', '2': 'The Hague'}
-    selected_city = city_map[message.text]
+    selected_city = city_map_global[message.text]
     bot.send_message(message.chat.id, f"You have selected {selected_city}. Hunters will now target this city.")
 
     # Update hunters with the selected city

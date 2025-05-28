@@ -40,7 +40,9 @@ class Pararius(Hunter):
     def supported_cities(self):
         return {
             'Groningen': 'https://www.pararius.com/apartments/groningen',
-            'The Hague': 'https://www.pararius.com/apartments/den-haag'
+            'The Hague': 'https://www.pararius.com/apartments/den-haag',
+            'Amsterdam': 'https://www.pararius.com/apartments/amsterdam',
+            'Rotterdam': 'https://www.pararius.com/apartments/rotterdam',
         }
 
     def set_city(self, city):
