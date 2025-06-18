@@ -18,12 +18,20 @@ service = Service(CHROMEDRIVER_BIN)
 browser = webdriver.Chrome(service=service, options=options)
 
 class Prey:
-    def __init__(self, name, price, link, agency, website):
+    def __init__(self, name: str, price: str, link: str, agency: str, website: str):
         self.name = name
         self.price = price
         self.link = link
         self.agency = agency
         self.website = website
+
+    def __hash__(self):
+        return hash(self.link)
+
+    def __eq__(self, other):
+        if not isinstance(other, Prey):
+            return False
+        return self.link == other.link
 
     def __str__(self):
         return f"{self.name} | {self.link} | {self.agency} | {self.price}"
@@ -40,10 +48,10 @@ class Hunter:
         browser.close()
 
     def hunt(self):
-        preys: list[Prey] = []
+        preys: set[Prey] = set()
         for (i, url) in enumerate(self.urls):
             browser.get(url)
-            preys.extend(self.process())
+            preys.update(self.process()) # add to set (avoids duplicates)
             if i < len(self.urls) - 1: time.sleep(2) # delay between requests to avoid 429
         return preys
 

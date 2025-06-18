@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from history import History
-from hunters.hunter import Hunter
+from hunters.hunter import Hunter, Prey
 from hunters.gruno import Gruno
 from hunters.kamernet import Kamernet
 from hunters.pararius import Pararius
@@ -249,12 +249,12 @@ def run_hunters():
 
     history = History('history.txt')
     while runHunters:
-        preys = []
+        preys: set[Prey] = set()
         for hunter in active_hunters:
             try:
                 hunter_preys = hunter.hunt()
                 print(f'Hunter {hunter.name} found {len(hunter_preys)} preys')
-                preys += hunter_preys
+                preys.update(hunter_preys)
             except Exception as e:
                 print(f'Error with hunter {hunter.name}: {e}')
 
