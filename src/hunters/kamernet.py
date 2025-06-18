@@ -1,14 +1,14 @@
-from hunters.hunter import *
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import re
+from selenium.webdriver.support.ui import WebDriverWait
+
+from hunters.hunter import Hunter, Prey, browser
+
 
 class Kamernet(Hunter):
     def __init__(self):
         name = 'Kamernet'
-        url = 'https://kamernet.nl/en/for-rent/rooms-groningen'
-        super().__init__(name, url)
+        super().__init__(name)
 
     def process(self):
         # Get list
@@ -18,7 +18,7 @@ class Kamernet(Hunter):
         listings_container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'GridGenerator_root__gJhqx')))
         listings = listings_container.find_elements(By.CLASS_NAME, 'ListingCard_root__e9Z81')
 
-        preys = []
+        preys: list[Prey] = []
         for listing in listings:
             try:
                 name = listing.find_element(By.CLASS_NAME, 'MuiTypography-subtitle1').text[:-1]
@@ -33,12 +33,7 @@ class Kamernet(Hunter):
     def supported_cities(self):
         return {
             'Groningen': 'https://kamernet.nl/en/for-rent/properties-groningen',
-            'The Hague': 'https://kamernet.nl/en/for-rent/properties-den-haag'
+            'The Hague': 'https://kamernet.nl/en/for-rent/properties-den-haag',
+            'Enschede': 'https://kamernet.nl/en/for-rent/properties-enschede',
+            'Hengelo': 'https://kamernet.nl/en/for-rent/properties-hengelo',
         }
-
-    def set_city(self, city):
-        cities = self.supported_cities()
-        if city in cities:
-            self.url = cities[city]
-        else:
-            raise ValueError(f"City '{city}' is not supported by {self.name}")
