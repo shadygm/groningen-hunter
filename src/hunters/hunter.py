@@ -1,11 +1,19 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
+# Set browser and driver paths for Chromium
+CHROME_BIN      = "/usr/bin/chromium"
+CHROMEDRIVER_BIN = "/usr/bin/chromedriver"   # chromium-driver's binary is called chromedriver
+
+# Configure browser
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-options.binary_location = "/usr/bin/google-chrome-stable"
-browser = webdriver.Chrome(options=options)
+options.binary_location = CHROME_BIN
+options.add_argument("--headless=new") # modern headless mode
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+
+service = Service(CHROMEDRIVER_BIN)
+browser = webdriver.Chrome(service=service, options=options)
 
 class Prey:
     def __init__(self, name, price, link, agency, website):
