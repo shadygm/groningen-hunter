@@ -1,15 +1,16 @@
-from hunters.hunter import *
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
 import re
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from hunters.hunter import Hunter, Prey, browser
+
 
 class Wonen123(Hunter):
     def __init__(self):
         name = '123Wonen'
-        url = 'https://www.expatrentalsholland.com/offer/in/groningen'
-        super().__init__(name, url)
+        super().__init__(name)
 
     def process(self):
         # Get list
@@ -18,7 +19,7 @@ class Wonen123(Hunter):
         items = items_wrap.find_elements(By.CSS_SELECTOR, '.pandlist-container')
 
         # Process items
-        preys = []
+        preys: list[Prey] = []
         for item in items:
             name = item.find_element(By.CLASS_NAME, 'pand-address').text
             price = item.find_element(By.CLASS_NAME, 'pand-price').text
@@ -31,12 +32,7 @@ class Wonen123(Hunter):
     def supported_cities(self):
         return {
             'Groningen': 'https://www.expatrentalsholland.com/offer/in/groningen',
-            'The Hague': 'https://www.expatrentalsholland.com/offer/in/den+haag'
+            'The Hague': 'https://www.expatrentalsholland.com/offer/in/den+haag',
+            'Enschede': 'https://www.expatrentalsholland.com/offer/in/enschede',
+            'Hengelo': 'https://www.expatrentalsholland.com/offer/in/hengelo',
         }
-
-    def set_city(self, city):
-        cities = self.supported_cities()
-        if city in cities:
-            self.url = cities[city]
-        else:
-            raise ValueError(f"City '{city}' is not supported by {self.name}")

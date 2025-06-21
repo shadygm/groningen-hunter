@@ -1,20 +1,24 @@
 import os
-import telebot
-from telebot import types
+import textwrap
 import threading
 import time
-import textwrap
-from hunters.pararius import Pararius
-from hunters.kamernet import Kamernet
-from hunters.gruno import Gruno
-from hunters.wonen123 import Wonen123
-from history import History
+
+import telebot
 from dotenv import load_dotenv
+from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
+
+from history import History
+from hunters.hunter import Hunter, Prey
+from hunters.gruno import Gruno
+from hunters.kamernet import Kamernet
+from hunters.pararius import Pararius
+from hunters.wonen123 import Wonen123
 
 # --- Constants and Globals ---
 ENV_FILE_PATH = 'src/.env'
-selected_city = None
+selected_cities: set[str] = set()
 runHunters = True
+ALL_HUNTERS: list[Hunter] = [Wonen123(), Gruno(), Kamernet(), Pararius()]
 
 # --- Load environment variables ---
 load_dotenv()
@@ -56,21 +60,21 @@ def update_env_file():
 bot = telebot.TeleBot(BOT_TOKEN)
 
 def create_custom_keyboard():
-    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    help_button = types.KeyboardButton('/help')
+    markup = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    help_button = KeyboardButton('/help')
     markup.add(help_button)
     return markup
 
-def send_message(chat_id, message):
-    bot.send_message(chat_id, message, reply_markup=create_custom_keyboard())
+def send_message(chat_id: int | str, text: str):
+    bot.send_message(chat_id, text, reply_markup=create_custom_keyboard())
 
-def broadcast_message(message):
+def broadcast_message(text: str):
     for chat_id in chat_ids:
-        send_message(chat_id, message)
+        send_message(chat_id, text)
 
 # --- Command Handlers ---
 @bot.message_handler(commands=['subscribe'])
-def subscribe_message(message):
+def subscribe_message(message: Message):
     global chat_ids, CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id not in chat_ids:
@@ -83,7 +87,7 @@ def subscribe_message(message):
         send_message(chat_id, 'You are already subscribed.')
 
 @bot.message_handler(commands=['unsubscribe'])
-def unsubscribe_message(message):
+def unsubscribe_message(message: Message):
     global chat_ids, CHAT_ID
     chat_id = str(message.chat.id)
     if chat_id in chat_ids:
@@ -96,9 +100,10 @@ def unsubscribe_message(message):
         send_message(chat_id, 'You are not subscribed.')
 
 @bot.message_handler(commands=['status'])
-def status_message(message):
-    if selected_city:
-        bot.send_message(message.chat.id, f"The currently selected city is: {selected_city}.")
+def status_message(message: Message):
+    if len(selected_cities) > 0:
+        pluralized = 'city is' if len(selected_cities) == 1 else 'cities are'
+        bot.send_message(message.chat.id, f"The currently selected {pluralized}: {', '.join(selected_cities)}.")
         if MAXIMUM_PRICE is not None:
             bot.send_message(message.chat.id, f"Current maximum price filter is: {MAXIMUM_PRICE}.")
         if MINIMUM_PRICE is not None:
@@ -107,7 +112,7 @@ def status_message(message):
         bot.send_message(message.chat.id, "No city has been selected yet. Please use the /start command to select a city.")
 
 @bot.message_handler(commands=['help'])
-def help_message(message):
+def help_message(message: Message):
     help_text = textwrap.dedent('''
         🌟 *Available Commands* 🌟
 
@@ -132,7 +137,7 @@ def help_message(message):
     bot.send_message(message.chat.id, help_text, parse_mode='Markdown')
 
 @bot.message_handler(commands=['set_min_price'])
-def set_min_price(message):
+def set_min_price(message: Message):
     global MINIMUM_PRICE
     try:
         price = int(message.text.split()[1])
@@ -160,12 +165,11 @@ def set_max_price(message):
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    global selected_city
+    global selected_cities
 
     # Dynamically fetch supported cities from all hunters
-    all_hunters = [Wonen123(), Gruno(), Kamernet(), Pararius()]
     city_set = set()
-    for hunter in all_hunters:
+    for hunter in ALL_HUNTERS:
         try:
             city_set.update(hunter.supported_cities())
         except NotImplementedError:
@@ -186,21 +190,19 @@ def start_message(message):
         parse_mode='Markdown'
     )
 
-@bot.message_handler(func=lambda message: message.text in city_map_global)
-def city_selection_message(message):
-    global selected_city
-    selected_city = city_map_global[message.text]
-    bot.send_message(message.chat.id, f"You have selected {selected_city}. Hunters will now target this city.")
+def parse_city_indices(message: Message):
+    # extract comma separated values and convert to set
+    return set([part.strip() for part in message.text.split(',')])
 
-    # Update hunters with the selected city
-    for hunter in [Wonen123(), Gruno(), Kamernet(), Pararius()]:
-        try:
-            hunter.set_city(selected_city)
-        except ValueError as e:
-            bot.send_message(message.chat.id, str(e))
+@bot.message_handler(func=lambda message: parse_city_indices(message).issubset(city_map_global))
+def city_selection_message(message: Message):
+    global selected_cities
+    selected_cities = set([city_map_global[index] for index in parse_city_indices(message)])
+    pluralized = 'city' if len(selected_cities) == 1 else 'cities'
+    bot.send_message(message.chat.id, f"Hunters will now target the following {pluralized}: {', '.join(selected_cities)}")
 
 @bot.message_handler(commands=['list'])
-def list_message(message):
+def list_message(message: Message):
     history = History('history.txt')
     all_preys = history.get_all()
 
@@ -220,38 +222,39 @@ def list_message(message):
         bot.send_message(message.chat.id, response, parse_mode='Markdown')
 
 @bot.message_handler(func=lambda message: True)
-def unrecognized_message(message):
+def unrecognized_message(message: Message):
     bot.send_message(message.chat.id, "Unrecognized command. Use /help to see available commands.")
 
 # --- Core Logic: Hunters ---
 def run_hunters():
-    global selected_city
-    all_hunters = [Wonen123(), Gruno(), Kamernet(), Pararius()]
+    global selected_cities
 
-    while selected_city is None:
+    while len(selected_cities) == 0:
         print('Waiting for city selection...')
         time.sleep(5)
 
-    active_hunters = []
-    for hunter in all_hunters:
-        try:
-            hunter.set_city(selected_city)
+    active_hunters: list[Hunter] = []
+    for hunter in ALL_HUNTERS:
+        unsupported = hunter.set_cities(selected_cities)
+        if len(unsupported) < len(selected_cities):
+            # There was at least one supported city
             active_hunters.append(hunter)
-        except ValueError:
-            print(f"Skipping {hunter.name} as it does not support the selected city.")
+        else:
+            pluralized = 'city' if len(unsupported) == 1 else 'cities'
+            print(f"Skipping {hunter.name} as it does not support the selected {pluralized}.")
 
-    print('Start hunters')
+    print('Starting hunters')
     for hunter in active_hunters:
         hunter.start()
 
     history = History('history.txt')
     while runHunters:
-        preys = []
+        preys: set[Prey] = set()
         for hunter in active_hunters:
             try:
                 hunter_preys = hunter.hunt()
                 print(f'Hunter {hunter.name} found {len(hunter_preys)} preys')
-                preys += hunter_preys
+                preys.update(hunter_preys)
             except Exception as e:
                 print(f'Error with hunter {hunter.name}: {e}')
 
@@ -266,16 +269,17 @@ def run_hunters():
             filtered_preys = [prey for prey in filtered_preys if int(prey.price) >= int(MINIMUM_PRICE)]
 
         for prey in filtered_preys:
-            message = textwrap.dedent(f'''
-                \U0001F4E2 *Listing Found:*
+            message_text = textwrap.dedent(f'''
+                📢 *Listing Found:*
 
                 Name: {prey.name}
                 {'Agency: ' + prey.agency if prey.agency is not None else ''}
                 Price: €{prey.price}
                 Link: {prey.link}
             ''')
-            broadcast_message(message)
-        time.sleep(10 * 60)
+            broadcast_message(message_text)
+        
+        time.sleep(4 * 60)
 
     print('Stop hunters')
     for hunter in active_hunters:

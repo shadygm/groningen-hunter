@@ -1,5 +1,10 @@
+from typing import Collection
+
+from hunters.hunter import Prey
+
+
 class History:
-    def __init__(self, file_path):
+    def __init__(self, file_path: str):
         self.file_path = file_path
         self.seen_apartments = self.load_history()
 
@@ -15,7 +20,7 @@ class History:
         with open(self.file_path, 'w') as file:
             file.write('\n'.join(self.seen_apartments))
 
-    def filter(self, preys):
+    def filter(self, preys: Collection[Prey]):
         new_preys = [prey for prey in preys if str(prey) not in self.seen_apartments]
         self.seen_apartments.extend(str(prey) for prey in new_preys)
         self.save_history()

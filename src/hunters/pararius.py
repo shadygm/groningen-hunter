@@ -1,15 +1,16 @@
-from hunters.hunter import *
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
 import re
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from hunters.hunter import Hunter, Prey, browser
+
 
 class Pararius(Hunter):
     def __init__(self):
         name = 'Pararius'
-        url = 'https://www.pararius.nl/huurwoningen/groningen'
-        super().__init__(name, url)
+        super().__init__(name)
 
     def process(self):
         # Get list
@@ -18,7 +19,7 @@ class Pararius(Hunter):
         items = item_list.find_elements(By.TAG_NAME, 'li')
 
         # Process list
-        preys = []
+        preys: list[Prey] = []
         for item in items:
             try:
                 # Get info
@@ -43,11 +44,6 @@ class Pararius(Hunter):
             'The Hague': 'https://www.pararius.com/apartments/den-haag',
             'Amsterdam': 'https://www.pararius.com/apartments/amsterdam',
             'Rotterdam': 'https://www.pararius.com/apartments/rotterdam',
+            'Enschede': 'https://www.pararius.com/apartments/enschede',
+            'Hengelo': 'https://www.pararius.com/apartments/hengelo',
         }
-
-    def set_city(self, city):
-        cities = self.supported_cities()
-        if city in cities:
-            self.url = cities[city]
-        else:
-            raise ValueError(f"City '{city}' is not supported by {self.name}")

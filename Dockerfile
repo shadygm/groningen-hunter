@@ -3,17 +3,13 @@ FROM python:3.12-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install necessary packages
+# Install necessary packages (including Chromium and its driver)
 RUN apt-get update && \
-    apt-get install -y curl wget gnupg unzip && \
-    apt-get clean
+    apt-get install -y --no-install-recommends \
+        curl wget gnupg unzip \
+        chromium chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    apt-get clean
 
 # Copy requirements file
 COPY requirements.txt .
@@ -27,5 +23,5 @@ COPY src src
 # Forward stdout
 ENV PYTHONUNBUFFERED=1
 
-# Run groningen hunter
+# Run hunter
 CMD ["python", "src/main.py"]
