@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from history import History, read_listings
-from hunters.hunter import Hunter, Prey, shutdown_browser
+from hunters.hunter import Hunter, Prey, SharedBrowser
 from hunters.gruno import Gruno
 from hunters.kamernet import Kamernet
 from hunters.pararius import Pararius
@@ -230,6 +230,7 @@ def unrecognized_message(message: Message):
 # --- Core Logic: Hunters ---
 def run_hunters():
     history = History('history.txt')
+    shared_browser = SharedBrowser()
     started_hunters: set[str] = set()
     waiting_logged = False
 
@@ -253,11 +254,12 @@ def run_hunters():
                 hunter.start()
                 started_hunters.add(hunter.name)
             try:
-                hunter_preys = hunter.hunt()
+                hunter_preys = hunter.hunt(shared_browser.get())
                 print(f'Hunter {hunter.name} found {len(hunter_preys)} preys')
                 preys.update(hunter_preys)
             except Exception as e:
                 print(f'Error with hunter {hunter.name}: {type(e).__name__}: {e}')
+        shared_browser.park()
 
         new_preys = history.filter(preys)
         if len(new_preys) > 0:
@@ -286,7 +288,7 @@ def run_hunters():
     for hunter in ALL_HUNTERS:
         if hunter.name in started_hunters:
             hunter.stop()
-    shutdown_browser()
+    shared_browser.close()
 
 # --- Main Entrypoint ---
 if __name__ == "__main__":

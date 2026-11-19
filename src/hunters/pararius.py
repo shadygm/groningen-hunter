@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from hunters.hunter import Hunter, Prey, browser
+from hunters.hunter import Hunter, Prey
 
 
 class Pararius(Hunter):
@@ -12,7 +12,7 @@ class Pararius(Hunter):
         name = 'Pararius'
         super().__init__(name)
 
-    def process(self):
+    def process(self, browser):
         # Get list
         wait = WebDriverWait(browser, 10)
         item_list = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'search-list')))

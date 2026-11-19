@@ -5,7 +5,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from hunters.hunter import Hunter, Prey, browser
+from hunters.hunter import Hunter, Prey
 
 
 class Gruno(Hunter):
@@ -13,7 +13,7 @@ class Gruno(Hunter):
         name = 'Gruno Verhuur'
         super().__init__(name)
 
-    def process(self):
+    def process(self, browser):
         # Get list or rows
         wait = WebDriverWait(browser, 10)
         rows = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//div[@class="object_list col-md-12"]//div[@class="row"]')))

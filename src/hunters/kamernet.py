@@ -2,7 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from hunters.hunter import Hunter, Prey, browser
+from hunters.hunter import Hunter, Prey
 
 
 class Kamernet(Hunter):
@@ -10,7 +10,7 @@ class Kamernet(Hunter):
         name = 'Kamernet'
         super().__init__(name)
 
-    def process(self):
+    def process(self, browser):
         # Get list
         wait = WebDriverWait(browser, 10)
 
