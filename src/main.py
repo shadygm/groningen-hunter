@@ -276,7 +276,10 @@ def run_hunters():
                 Link: {prey.link}
             ''')
             for chat_id in users.recipients_for(prey.city, parse_price(prey.price)):
-                send_message(chat_id, message_text)
+                try:
+                    send_message(chat_id, message_text)
+                except Exception as e:
+                    print(f'Could not notify {chat_id} of {prey.link}: {type(e).__name__}: {e}')
 
         # Sleep in small steps so shutdown stays responsive
         for _ in range(4 * 60 // 5):
