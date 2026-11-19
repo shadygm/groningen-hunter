@@ -7,7 +7,7 @@ import telebot
 from dotenv import load_dotenv
 from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
-from history import History
+from history import History, read_listings
 from hunters.hunter import Hunter, Prey, shutdown_browser
 from hunters.gruno import Gruno
 from hunters.kamernet import Kamernet
@@ -195,28 +195,21 @@ def city_selection_message(message: Message):
 @bot.message_handler(commands=['list'])
 def list_message(message: Message):
     chat_id = str(message.chat.id)
-    history = History('history.txt')
-    all_preys = history.get_all()
-
-    # Apply the user's price filters, if any
     settings = users.get_settings(chat_id)
-    if settings is not None:
-        filtered_preys = []
-        for prey in all_preys:
+    found_any = False
+
+    # Stream the history file rather than loading it: it holds every listing ever found
+    for prey in read_listings('history.txt'):
+        # Apply the user's price filters, if any
+        if settings is not None:
             price = parse_price(prey['price'])
             if price is not None:
                 if settings['min_price'] is not None and price < settings['min_price']:
                     continue
                 if settings['max_price'] is not None and price > settings['max_price']:
                     continue
-            filtered_preys.append(prey)
-        all_preys = filtered_preys
+        found_any = True
 
-    if not all_preys:
-        bot.send_message(chat_id, 'No listings have been found yet.')
-        return
-
-    for prey in all_preys:
         response = textwrap.dedent(f'''
             \U0001F4E2 *Listing Found:*
 
@@ -226,6 +219,9 @@ def list_message(message: Message):
             Link: {prey['link']}
         ''')
         bot.send_message(chat_id, response, parse_mode='Markdown')
+
+    if not found_any:
+        bot.send_message(chat_id, 'No listings have been found yet.')
 
 @bot.message_handler(func=lambda message: True)
 def unrecognized_message(message: Message):
