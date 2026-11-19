@@ -1,0 +1,22 @@
+# Template for the groningen-hunter systemd unit.
+# setup-systemd.sh replaces __USER__ and installs the result
+# to /etc/systemd/system/groningen-hunter.service.
+
+[Unit]
+Description=Groningen Hunter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=/opt/groningen-hunter
+ExecStart=/opt/groningen-hunter/.venv/bin/python src/main.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

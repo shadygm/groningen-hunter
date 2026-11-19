@@ -2,4 +2,6 @@
 *.log
 *.pem
 history.txt
+users.json
 __pycache__/
+.venv/

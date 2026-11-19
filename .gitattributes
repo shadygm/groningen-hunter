@@ -1,0 +1,3 @@
+# always check out with LF
+*.sh text eol=lf
+*.service.in text eol=lf

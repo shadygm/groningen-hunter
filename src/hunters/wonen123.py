@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from hunters.hunter import Hunter, Prey, browser
+from hunters.hunter import Hunter, Prey
 
 
 class Wonen123(Hunter):
@@ -12,7 +12,7 @@ class Wonen123(Hunter):
         name = '123Wonen'
         super().__init__(name)
 
-    def process(self):
+    def process(self, browser):
         # Get list
         wait = WebDriverWait(browser, 10)
         items_wrap = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'pandlist')))

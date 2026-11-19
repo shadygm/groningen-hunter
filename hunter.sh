@@ -10,8 +10,6 @@ display_help() {
     echo "  --version               Print the Docker image version and package versions"
     echo "  --build                 Build the Docker image"
     echo "  --set-bot-token <value> Set the bot token in the configuration"
-    echo "  --set-max <value>       Set the maximum price in the configuration"
-    echo "  --set-min <value>       Set the minimum price in the configuration"
     echo "  --show-config           Show the current configuration"
     echo "  --help                  Display this help message"
 }
@@ -26,6 +24,9 @@ run_container() {
     if ! test -f $(pwd)/history.txt; then
         touch $(pwd)/history.txt
     fi
+    if ! test -f $(pwd)/users.json; then
+        touch $(pwd)/users.json
+    fi
     if ! test -f $(pwd)/src/.env; then
         touch $(pwd)/src/.env
     fi
@@ -35,6 +36,7 @@ run_container() {
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -v $(pwd)/src/.env:/app/src/.env \
         -v $(pwd)/history.txt:/app/history.txt \
+        -v $(pwd)/users.json:/app/users.json \
         groningen-hunter
 }
 
@@ -84,11 +86,8 @@ case "$1" in
     --set-bot-token)
         set_config "BOT_TOKEN" "$2"
         ;;
-    --set-max)
-        set_config "MAXIMUM_PRICE" "$2"
-        ;;
-    --set-min)
-        set_config "MINIMUM_PRICE" "$2"
+    --set-max|--set-min)
+        echo "Deprecated: price filters are now per user. Send /set_min_price or /set_max_price to the bot on Telegram."
         ;;
     --show-config)
         show_config
